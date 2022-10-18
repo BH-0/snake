@@ -15,72 +15,52 @@ int main(int argc, char **argv)
     /*创建线程*/
     pthread_t map_showing_t;    //鸟瞰显示线程
     pthread_create(&map_showing_t,NULL,map_showing_task,NULL);
-    pthread_t map_show_film;    //鸟瞰显示线程
+    pthread_t map_show_film;    //边界镜头跟拍线程
     pthread_create(&map_show_film,NULL,map_show_film_task,NULL);
-
+    pthread_t scan_keyboard_t;    //键盘监听线程
+    pthread_create(&scan_keyboard_t,NULL,scan_keyboard_task,NULL);
+    pthread_t snake_task_t;    //贪吃蛇主线程
+    pthread_create(&snake_task_t,NULL,snake_task,NULL);
 
 
 #if 1
-    for(int i=0; i<SNAKE_SIZE; i++)
+    for(int i=0; i<SNAKE_SIZE; i++) //食物
     {
         pthread_rwlock_wrlock(&map_buffer_rwlock);
         for (int j=0; j<SNAKE_SIZE; j++) {
 
-            map_buffer[400 + i][700 + j] = 0xffffff;
+            map_buffer[400 + i][700 + j] = 0xff0000;
         }
         pthread_rwlock_unlock(&map_buffer_rwlock);
     }
-    for(int i=0; i<SNAKE_SIZE; i++)
+    for(int i=0; i<SNAKE_SIZE; i++) //食物
     {
         pthread_rwlock_wrlock(&map_buffer_rwlock);
         for (int j=0; j<SNAKE_SIZE; j++) {
 
-            map_buffer[400 + i][700 + j] = 0;
+            map_buffer[440 + i][700 + j] = 0xff0000;
+        }
+        pthread_rwlock_unlock(&map_buffer_rwlock);
+    }
+    for(int i=0; i<SNAKE_SIZE; i++) //食物
+    {
+        pthread_rwlock_wrlock(&map_buffer_rwlock);
+        for (int j=0; j<SNAKE_SIZE; j++) {
+
+            map_buffer[440 + i][740 + j] = 0xff0000;
+        }
+        pthread_rwlock_unlock(&map_buffer_rwlock);
+    }
+    for(int i=0; i<SNAKE_SIZE; i++) //食物
+    {
+        pthread_rwlock_wrlock(&map_buffer_rwlock);
+        for (int j=0; j<SNAKE_SIZE; j++) {
+
+            map_buffer[400 + i][740 + j] = 0xff0000;
         }
         pthread_rwlock_unlock(&map_buffer_rwlock);
     }
 
-    print_allToList(snake); //打印
-    printf("\n");
-    snake_t *p = snake->head;
-    for(int i=0; i<snake->nodeNumber; i++)
-    {
-        snake_show(p,1);
-        p = p->next;
-    }
-
-    sleep(1);
-    int i = 0;
-    char buf = {0};
-    while(1)//350
-    {
-        //usleep(20000);
-        usleep(10);
-        scanf("%c",&buf);
-        if(buf == 'w' && snake->tail->next_direction != s_down)
-            snake->tail->next_direction = s_up;
-        if(buf == 'a' && snake->tail->next_direction != s_right)
-            snake->tail->next_direction = s_left;
-        if(buf == 's' && snake->tail->next_direction != s_up)
-            snake->tail->next_direction = s_down;
-        if(buf == 'd' && snake->tail->next_direction != s_left)
-            snake->tail->next_direction = s_right;
-//        if(i==10)
-//            snake->tail->next_direction = s_down;
-//        else if(i==68)
-//            snake->tail->next_direction = s_right;
-//        else if(i==162)
-//            snake->tail->next_direction = s_up;
-//        else if(i==231)
-//            snake->tail->next_direction = s_left;
-        enter_snake_t(snake);   //尾插
-        snake_show(snake->tail,1);  //显示头
-        snake_show(snake->head,0);  //消除尾
-        del_snake_t(snake); //头删
-
-        i++; //
-    }
-    printf("end\n");
 #endif
 
 #if 1 //进入主线程

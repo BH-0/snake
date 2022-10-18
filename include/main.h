@@ -11,5 +11,6 @@
 #include "font.h"
 #include "map_show.h"
 #include "snake.h"
+#include "keyboard.h"
 
 #endif //__MAIN_H

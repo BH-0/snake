@@ -8,6 +8,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "map_show.h"
+#include "keyboard.h"
 
 //方向
 enum direction{s_up,s_down,s_left,s_right};
@@ -37,6 +38,9 @@ extern pthread_rwlock_t snake_list_rwlock; //读写锁
 //显示和消除蛇身（4方向扫描）
 //入口参数：想显示或消除的蛇身，1显示，0消除
 void snake_show(snake_t *node, int cmd);
+
+//snake主控线程
+void *snake_task(void *arg);
 
 //新建一个结点并初始化
 //函数参数：管理结构体，节点数据

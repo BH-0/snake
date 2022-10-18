@@ -99,6 +99,123 @@ void snake_show(snake_t *node, int cmd)
     }
 }
 
+//奖罚判定，判断吃到食物还是撞墙，还是撞到自己
+//入口参数：蛇的朝向
+//返回值：1吃到食物，0正常移动，-1碰撞
+int snake_decision(enum direction d)
+{
+    switch(d)
+    {
+        case s_up:
+            if(map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x] == 0 ||    //撞自己
+                    map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x] == 0xff6600)  //撞墙
+            {
+                printf("game over!\n");
+                for(;;);
+            }
+            else if(map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x] == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                return 1;
+            }
+            break;
+        case s_down:
+            if(map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x] == 0 ||    //撞自己
+               map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x] == 0xff6600)  //撞墙
+            {
+                printf("game over!\n");
+                for(;;);
+            }
+            else if(map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x] == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                return 1;
+            }
+            break;
+        case s_left:
+            if(map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE] == 0 ||    //撞自己
+               map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE] == 0xff6600)  //撞墙
+            {
+                printf("game over!\n");
+                for(;;);
+            }
+            else if(map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE] == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                return 1;
+            }
+            break;
+        case s_right:
+            if(map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE] == 0 ||    //撞自己
+               map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE] == 0xff6600)  //撞墙
+            {
+                printf("game over!\n");
+                for(;;);
+            }
+            else if(map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE] == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                return 1;
+            }
+            break;
+    }
+    return 0;
+}
+
+//snake主控线程
+void *snake_task(void *arg)
+{
+    pthread_detach(pthread_self()); //分离属性
+    int length_buf = 0;
+    snake_t *p = snake->head;
+    for(int i=0; i<snake->nodeNumber; i++)
+    {
+        snake_show(p,1);    //显示蛇宝宝
+        p = p->next;
+    }
+    for(;;)
+    {
+        if((scan_keyboard == 'w' && snake->tail->next_direction == s_up)||
+                (scan_keyboard == 'a' && snake->tail->next_direction == s_left)||
+                (scan_keyboard == 's' && snake->tail->next_direction == s_down)||
+                (scan_keyboard == 'd' && snake->tail->next_direction == s_right))
+        {
+            usleep(10); //同向加速
+        }
+        else
+            usleep(200000);//正常
+
+        if(scan_keyboard == 'w' && snake->tail->next_direction != s_down)
+            snake->tail->next_direction = s_up;
+        if(scan_keyboard == 'a' && snake->tail->next_direction != s_right)
+            snake->tail->next_direction = s_left;
+        if(scan_keyboard == 's' && snake->tail->next_direction != s_up)
+            snake->tail->next_direction = s_down;
+        if(scan_keyboard == 'd' && snake->tail->next_direction != s_left)
+            snake->tail->next_direction = s_right;
+        scan_keyboard = 0; //清空按键
+
+        if(snake_decision(snake->tail->next_direction) == 1)    //碰撞判断
+        {
+            enter_snake_t(snake);   //尾插
+            snake_show(snake->tail, 1);  //显示头
+            length_buf+=5;  //变长次数
+        }else if(length_buf != 0)   //还有长度，继续变长
+        {
+            enter_snake_t(snake);   //尾插
+            snake_show(snake->tail, 1);  //显示头
+            length_buf--;
+        }
+        else
+        {
+            enter_snake_t(snake);   //尾插
+            snake_show(snake->tail, 1);  //显示头
+            snake_show(snake->head, 0);  //消除尾
+            del_snake_t(snake); //头删
+        }
+    }
+}
+
 
 /*贪吃蛇链表*/
 //新建一个结点并初始化
