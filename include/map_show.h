@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "lcd.h"
+#include "snake.h"
 
 #define SNAKE_SIZE 20   //蛇身大小,一定要为480和800的公因数
 #define MAP_HEIGHT (480*3)      //地图高
@@ -26,5 +27,8 @@ void map_show_init(void);
 
 //鸟瞰坐标修改
 void map_show_xy(int x, int y);
+
+//边界镜头跟拍线程
+void *map_show_film_task(void *arg);
 
 #endif //__MAP_SHOW_H
