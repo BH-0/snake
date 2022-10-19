@@ -24,10 +24,6 @@ int main(int argc, char **argv)
     pthread_create(&snake_task_t,NULL,snake_task,NULL);
 
 
-#if 1
-
-#endif
-
 #if 1 //进入主线程（菜单控制）
     for(;;)
     {

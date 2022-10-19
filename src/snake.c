@@ -6,6 +6,8 @@
 /*贪吃蛇全局变量*/
 struct snake_list *snake;
 pthread_rwlock_t snake_list_rwlock; //读写锁
+int game_points = 0; //游戏积分
+int SNAKE_COLOR = 0x00aaff; //蛇身颜色
 
 //读写锁死锁保护函数
 static void handler(void *arg)
@@ -24,13 +26,13 @@ void snake_show(snake_t *node, int cmd)
     int y = 0;
     int i,j;
     enum direction direction_f;
-    unsigned int refresh_rate = 2000;   //蛇身动画每一帧的速度控制，越大越丝滑但越慢
+    unsigned int refresh_rate = 100+(2500*(50-(game_points>50?50:game_points))/50);   //蛇身动画每一帧的速度控制，越大越丝滑但越慢
 
     pthread_cleanup_push(handler,(void*)&snake_list_rwlock);    //压栈
     pthread_rwlock_rdlock(&snake_list_rwlock);  //读锁
     direction_f = node->next_direction; //扫描方向
     if (cmd == 0)
-        color = 0xffffff;
+        color = 0xffffffff;
     else
         color = node->color;
     x = node->x;
@@ -105,7 +107,7 @@ void food_init(void)
 {
     //初始食物坐标
     int food_buf[][2] = {{400,700},{440,700},{440,740},{400,740},{420,680},
-                         {380,720},{460,720},{420,760},{420,720}};
+                         {420,740},{440,720},{460,720},{420,760},{420,720}};
     int l = 0;  //多个食物刷新
     int x,y;
     pthread_rwlock_wrlock(&map_buffer_rwlock);  //写锁
@@ -114,7 +116,6 @@ void food_init(void)
         for (int i = 0; i < SNAKE_SIZE; i++) //食物
         {
             for (int j = 0; j < SNAKE_SIZE; j++) {
-                printf("(%d,%d)\n",food_buf[l][0],food_buf[l][1]);
                 x = food_buf[l][0];
                 y = food_buf[l][1];
                 map_buffer[x + i][y + j] = 0xff0000;
@@ -137,10 +138,7 @@ void food(unsigned int seed_x,unsigned int seed_y)
     y_b -= y_b%SNAKE_SIZE;
     int sum = 0;
     //重叠重刷
-    while(map_buffer[y_b][x_b] == 0 ||  //自己身上
-            map_buffer[y_b][x_b] == 0xff6600 || //墙上
-            map_buffer[y_b][x_b] == 0xff0000    //食物重叠
-            )
+    while((map_buffer[y_b][x_b]&0xffffff) != 0xffffff)    //不为白色
     {
         //刷新范围从 SNAKE_SIZE 到 MAP_WIDTH - SNAKE_SIZE
         x_b = rand()%(MAP_WIDTH-(SNAKE_SIZE*2)+1)+SNAKE_SIZE;
@@ -173,59 +171,57 @@ int snake_decision(enum direction d)
     switch(d)
     {
         case s_up:
-            if(map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x] == 0 ||    //撞自己
-                    map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x] == 0xff6600)  //撞墙
+            if((map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x]&0xffffff) == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                game_points++;
+                return 1;
+            }else if((map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x]&0xffffff) != 0xffffff)   //白色
             {
                 printf("game over!\n");
                 for(;;);
-            }
-            else if(map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x] == 0xff0000)  //吃到
-            {
-                printf("nice~\n");
-                food(snake->tail->x,snake->tail->y);
-                return 1;
             }
             break;
         case s_down:
-            if(map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x] == 0 ||    //撞自己
-               map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x] == 0xff6600)  //撞墙
+            if((map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x]&0xffffff) == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                game_points++;
+                return 1;
+            }
+            else if((map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x]&0xffffff) != 0xffffff)   //白色
             {
                 printf("game over!\n");
                 for(;;);
-            }
-            else if(map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x] == 0xff0000)  //吃到
-            {
-                printf("nice~\n");
-                food(snake->tail->x,snake->tail->y);
-                return 1;
             }
             break;
         case s_left:
-            if(map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE] == 0 ||    //撞自己
-               map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE] == 0xff6600)  //撞墙
+            if((map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE]&0xffffff) == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                game_points++;
+                return 1;
+            }
+            else if((map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE]&0xffffff) != 0xffffff)  //白色
             {
                 printf("game over!\n");
                 for(;;);
-            }
-            else if(map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE] == 0xff0000)  //吃到
-            {
-                printf("nice~\n");
-                food(snake->tail->x,snake->tail->y);
-                return 1;
             }
             break;
         case s_right:
-            if(map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE] == 0 ||    //撞自己
-               map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE] == 0xff6600)  //撞墙
+            if((map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE]&0xffffff) == 0xff0000)  //吃到
+            {
+                printf("nice~\n");
+                food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                game_points++;
+                return 1;
+            }else if((map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE]&0xffffff) != 0xffffff) //白色
             {
                 printf("game over!\n");
                 for(;;);
-            }
-            else if(map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE] == 0xff0000)  //吃到
-            {
-                printf("nice~\n");
-                food(snake->tail->x,snake->tail->y);
-                return 1;
             }
             break;
     }
@@ -250,10 +246,12 @@ void *snake_task(void *arg)
                 (scan_keyboard == 's' && snake->tail->next_direction == s_down)||
                 (scan_keyboard == 'd' && snake->tail->next_direction == s_right))
         {
-            usleep(100); //同向加速
+            usleep(10); //同向加速
         }
         else
-            usleep(200000);//正常
+        {
+            usleep(100+200000*(50-(game_points>50?50:game_points))/50);//正常
+        }
 
         if(scan_keyboard == 'w' && snake->tail->next_direction != s_down)
             snake->tail->next_direction = s_up;
@@ -263,10 +261,31 @@ void *snake_task(void *arg)
             snake->tail->next_direction = s_down;
         if(scan_keyboard == 'd' && snake->tail->next_direction != s_left)
             snake->tail->next_direction = s_right;
+        if(scan_keyboard == 'p')    //暂停游戏
+        {
+            printf("暂停游戏\n");
+            scan_keyboard = 0; //清空按键
+            pthread_cleanup_push(handler,(void*)&map_buffer_rwlock);    //压栈
+            pthread_rwlock_wrlock(&map_buffer_rwlock);  //写锁
+            Display_utf8(325,200,"暂停",0x25ccf7,4,1);   //橙黄色
+            for(;;)
+            {
+                if(scan_keyboard == 'p')    //继续游戏
+                    break;
+            }
+            pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
+            pthread_cleanup_pop(0);    //弹栈，释放保护函数，但不执行此函数
+            printf("\n继续游戏\n");
+        }
         scan_keyboard = 0; //清空按键
 
         if(snake_decision(snake->tail->next_direction) == 1)    //碰撞判断
         {
+//            for(int i = 0; i <50; i++)
+//            {
+//                rainbow();
+//            }
+//            SNAKE_COLOR = rainbow(); //改变蛇身颜色
             enter_snake_t(snake);   //尾插
             snake_show(snake->tail, 1);  //显示头
             length_buf+=5;  //变长次数
@@ -356,7 +375,7 @@ struct snake_list *create_list()
     {
         //新建结点
         //设定蛇出生地及默认方向（出生地坐标必须为蛇身尺寸的倍数）
-        snake_t *newNode=new_node(listHead,200+(SNAKE_SIZE*sum),240,0,s_right);
+        snake_t *newNode=new_node(listHead,200+(SNAKE_SIZE*sum),240,SNAKE_COLOR,s_right);
         if(newNode == NULL)
         {
             printf("[%d]newNode error\n",__LINE__);//打印错误的行数
@@ -429,16 +448,16 @@ void enter_snake_t(struct snake_list *listHead)
     //新建节点
     switch(listHead->tail->next_direction){ //判断上一次的方向
         case s_up:
-            newNode = new_node(listHead, prev_x, prev_y-SNAKE_SIZE, 0, s_up);
+            newNode = new_node(listHead, prev_x, prev_y-SNAKE_SIZE, SNAKE_COLOR, s_up);
             break;
         case s_down:
-            newNode = new_node(listHead, prev_x, prev_y+SNAKE_SIZE, 0, s_down);
+            newNode = new_node(listHead, prev_x, prev_y+SNAKE_SIZE, SNAKE_COLOR, s_down);
             break;
         case s_left:
-            newNode = new_node(listHead, prev_x-SNAKE_SIZE, prev_y, 0, s_left);
+            newNode = new_node(listHead, prev_x-SNAKE_SIZE, prev_y, SNAKE_COLOR, s_left);
             break;
         case s_right:
-            newNode = new_node(listHead, prev_x+SNAKE_SIZE, prev_y, 0, s_right);
+            newNode = new_node(listHead, prev_x+SNAKE_SIZE, prev_y, SNAKE_COLOR, s_right);
             break;
     }
     if(newNode == NULL)
@@ -504,4 +523,60 @@ void destory_list(struct snake_list *listHead)
     listHead->nodeNumber = 0;
     free(listHead);
     pthread_rwlock_unlock(&snake_list_rwlock);  //解锁
+}
+
+
+//最高饱和度彩虹色每调用一次颜色加1
+int rainbow(void)
+{
+    static int color = 0x000000ff;  //从蓝色开始
+    static int mode = 0;
+    switch (color)
+    {
+        case 0x00ff0000:
+            mode = 0;   //0x00ff++00
+            break;
+        case 0x00ffff00:
+            mode = 1;   //0x00--ff00
+            break;
+        case 0x0000ff00:
+            mode = 2;   //0x0000ff++
+            break;
+        case 0x0000ffff:
+            mode = 3;   //0x0000--ff
+            break;
+        case 0x000000ff:
+            mode = 4;   //0x00++00ff
+            break;
+        case 0x00ff00ff:
+            mode = 5;   //0x00ff00--
+            break;
+        default:
+            break;
+    }
+
+    switch (mode)
+    {
+        case 0:
+            color += 0x00000100;   //0x00ff++00
+            break;
+        case 1:
+            color -= 0x00010000;   //0x00--ff00
+            break;
+        case 2:
+            color += 0x00000001;   //0x0000ff++
+            break;
+        case 3:
+            color -=  0x00000100;   //0x0000--ff
+            break;
+        case 4:
+            color += 0x00010000;   //0x00++00ff
+            break;
+        case 5:
+            color -= 0x00000001;   //0x00ff00--
+            break;
+        default:
+            break;
+    }
+    return color;
 }

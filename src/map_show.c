@@ -23,6 +23,7 @@ static void handler(void *arg)
 //入口参数：起始坐标
 void *map_showing_task(void *arg)
 {
+    char buf[128] = {0};
     pthread_detach(pthread_self()); //分离属性
     pthread_cleanup_push(handler,(void*)&map_buffer_rwlock);    //压栈
         int i;
@@ -34,7 +35,21 @@ void *map_showing_task(void *arg)
                 memcpy(LCD_addr[i], &map_buffer[i+show_xy.y][show_xy.x], sizeof(int)*800);
             }
             pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
-            //这里可尝试挂起一点点时间,或者显示其他东西
+
+            /*这里可尝试挂起一点点时间,或者显示其他东西*/
+            //积分显示
+            sprintf(buf,"%d",game_points);
+            if(game_points>=50)
+            {
+                Display_utf8(15,20,buf,0xff0000,2,1);   //红色
+            }else if(game_points>=25)
+            {
+                Display_utf8(15,20,buf,0xffcc00,2,1);   //橙黄色
+            }else
+            {
+                Display_utf8(15,20,buf,0x009432,2,1);   //绿色
+            }
+
             usleep(30000);//刷新率控制30ms刷新一帧
         }
     pthread_cleanup_pop(0);    //弹栈，释放保护函数，但不执行此函数

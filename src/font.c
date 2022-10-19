@@ -15,6 +15,11 @@ int Display_utf8(unsigned int x,//x坐标起始点
 
     Utf8ToGb2312(UTF8, strlen(UTF8), temp); //转码
     if(shadow != 0)
-        Display_characterX(x+1,y+1,temp,0,size);    //显示阴影
+    {
+        if(size>1)
+            Display_characterX(x + 2, y + 2, temp, 0, size);    //显示阴影
+        else
+            Display_characterX(x + 1, y + 1, temp, 0, size);    //显示阴影
+    }
     return Display_characterX(x,y,temp,color,size);
 }

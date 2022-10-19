@@ -9,6 +9,9 @@
 #include <pthread.h>
 #include "map_show.h"
 #include "keyboard.h"
+#include "font.h"
+
+
 
 //方向
 enum direction{s_up,s_down,s_left,s_right};
@@ -33,6 +36,7 @@ struct snake_list{
 /*外部声明*/
 extern struct snake_list *snake;
 extern pthread_rwlock_t snake_list_rwlock; //读写锁
+extern int game_points;
 
 /*函数声明*/
 //食物初始化
@@ -64,5 +68,8 @@ void del_snake_t(struct snake_list *listHead);
 
 //销毁链表
 void destory_list(struct snake_list *listHead);
+
+//最高饱和度彩虹色每调用一次颜色加1
+int rainbow(void);
 
 #endif //__SNAKE_H
