@@ -35,6 +35,8 @@ extern struct snake_list *snake;
 extern pthread_rwlock_t snake_list_rwlock; //读写锁
 
 /*函数声明*/
+//食物初始化
+void food_init(void);
 //显示和消除蛇身（4方向扫描）
 //入口参数：想显示或消除的蛇身，1显示，0消除
 void snake_show(snake_t *node, int cmd);

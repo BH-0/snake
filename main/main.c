@@ -11,6 +11,7 @@ int main(int argc, char **argv)
     map_show_init();
     /*贪吃蛇初始化*/
     snake = create_list();  //初始化贪吃蛇链表
+    food_init(); //食物初始化
 
     /*创建线程*/
     pthread_t map_showing_t;    //鸟瞰显示线程
@@ -24,46 +25,10 @@ int main(int argc, char **argv)
 
 
 #if 1
-    for(int i=0; i<SNAKE_SIZE; i++) //食物
-    {
-        pthread_rwlock_wrlock(&map_buffer_rwlock);
-        for (int j=0; j<SNAKE_SIZE; j++) {
-
-            map_buffer[400 + i][700 + j] = 0xff0000;
-        }
-        pthread_rwlock_unlock(&map_buffer_rwlock);
-    }
-    for(int i=0; i<SNAKE_SIZE; i++) //食物
-    {
-        pthread_rwlock_wrlock(&map_buffer_rwlock);
-        for (int j=0; j<SNAKE_SIZE; j++) {
-
-            map_buffer[440 + i][700 + j] = 0xff0000;
-        }
-        pthread_rwlock_unlock(&map_buffer_rwlock);
-    }
-    for(int i=0; i<SNAKE_SIZE; i++) //食物
-    {
-        pthread_rwlock_wrlock(&map_buffer_rwlock);
-        for (int j=0; j<SNAKE_SIZE; j++) {
-
-            map_buffer[440 + i][740 + j] = 0xff0000;
-        }
-        pthread_rwlock_unlock(&map_buffer_rwlock);
-    }
-    for(int i=0; i<SNAKE_SIZE; i++) //食物
-    {
-        pthread_rwlock_wrlock(&map_buffer_rwlock);
-        for (int j=0; j<SNAKE_SIZE; j++) {
-
-            map_buffer[400 + i][740 + j] = 0xff0000;
-        }
-        pthread_rwlock_unlock(&map_buffer_rwlock);
-    }
 
 #endif
 
-#if 1 //进入主线程
+#if 1 //进入主线程（菜单控制）
     for(;;)
     {
 

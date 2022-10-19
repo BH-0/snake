@@ -24,6 +24,7 @@ void snake_show(snake_t *node, int cmd)
     int y = 0;
     int i,j;
     enum direction direction_f;
+    unsigned int refresh_rate = 2000;   //蛇身动画每一帧的速度控制，越大越丝滑但越慢
 
     pthread_cleanup_push(handler,(void*)&snake_list_rwlock);    //压栈
     pthread_rwlock_rdlock(&snake_list_rwlock);  //读锁
@@ -51,7 +52,7 @@ void snake_show(snake_t *node, int cmd)
                 }
                 pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
                 pthread_cleanup_pop(0);    //弹栈，释放保护函数，但不执行此函数
-                usleep(1500);//刷新率控制5ms刷新一帧
+                usleep(refresh_rate);//刷新率控制
             }
             break;
         case s_down:
@@ -65,7 +66,7 @@ void snake_show(snake_t *node, int cmd)
                 }
                 pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
                 pthread_cleanup_pop(0);    //弹栈，释放保护函数，但不执行此函数
-                usleep(1500);//刷新率控制5ms刷新一帧
+                usleep(refresh_rate);//刷新率控制
             }
             break;
         case s_left:
@@ -79,7 +80,7 @@ void snake_show(snake_t *node, int cmd)
                 }
                 pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
                 pthread_cleanup_pop(0);    //弹栈，释放保护函数，但不执行此函数
-                usleep(1500);//刷新率控制5ms刷新一帧
+                usleep(refresh_rate);//刷新率控制
             }
             break;
         case s_right:
@@ -93,10 +94,75 @@ void snake_show(snake_t *node, int cmd)
                 }
                 pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
                 pthread_cleanup_pop(0);    //弹栈，释放保护函数，但不执行此函数
-                usleep(1500);//刷新率控制5ms刷新一帧
+                usleep(refresh_rate);//刷新率控制
             }
             break;
     }
+}
+
+//食物初始化
+void food_init(void)
+{
+    //初始食物坐标
+    int food_buf[][2] = {{400,700},{440,700},{440,740},{400,740},{420,680},
+                         {380,720},{460,720},{420,760},{420,720}};
+    int l = 0;  //多个食物刷新
+    int x,y;
+    pthread_rwlock_wrlock(&map_buffer_rwlock);  //写锁
+    for(l=0; l<(sizeof(food_buf)/8); l++)
+    {
+        for (int i = 0; i < SNAKE_SIZE; i++) //食物
+        {
+            for (int j = 0; j < SNAKE_SIZE; j++) {
+                printf("(%d,%d)\n",food_buf[l][0],food_buf[l][1]);
+                x = food_buf[l][0];
+                y = food_buf[l][1];
+                map_buffer[x + i][y + j] = 0xff0000;
+            }
+        }
+    }
+    pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
+}
+
+//食物刷新
+//传入一个种子，随机刷新一次食物，种子可以是被吃掉食物的坐标
+void food(unsigned int seed_x,unsigned int seed_y)
+{
+    srand(seed_x*seed_y);
+    //刷新范围从 SNAKE_SIZE 到 MAP_WIDTH - SNAKE_SIZE
+    int x_b = rand()%(MAP_WIDTH-(SNAKE_SIZE*2)+1)+SNAKE_SIZE;
+    int y_b = rand()%(MAP_HEIGHT-(SNAKE_SIZE*2)+1)+SNAKE_SIZE;
+    //抹零
+    x_b -= x_b%SNAKE_SIZE;
+    y_b -= y_b%SNAKE_SIZE;
+    int sum = 0;
+    //重叠重刷
+    while(map_buffer[y_b][x_b] == 0 ||  //自己身上
+            map_buffer[y_b][x_b] == 0xff6600 || //墙上
+            map_buffer[y_b][x_b] == 0xff0000    //食物重叠
+            )
+    {
+        //刷新范围从 SNAKE_SIZE 到 MAP_WIDTH - SNAKE_SIZE
+        x_b = rand()%(MAP_WIDTH-(SNAKE_SIZE*2)+1)+SNAKE_SIZE;
+        y_b = rand()%(MAP_HEIGHT-(SNAKE_SIZE*2)+1)+SNAKE_SIZE;
+        //抹零
+        x_b -= x_b%SNAKE_SIZE;
+        y_b -= y_b%SNAKE_SIZE;
+        sum++;
+        printf("食物刷新失败：%d次\n",sum);
+    }
+    pthread_cleanup_push(handler,(void*)&map_buffer_rwlock);    //压栈
+    pthread_rwlock_wrlock(&map_buffer_rwlock);  //写锁
+    for(int i=0; i<SNAKE_SIZE; i++) //食物
+    {
+        for (int j=0; j<SNAKE_SIZE; j++)
+        {
+            map_buffer[y_b + i][x_b + j] = 0xff0000;
+        }
+    }
+    pthread_rwlock_unlock(&map_buffer_rwlock);  //解锁
+    pthread_cleanup_pop(0);    //弹栈，释放保护函数，但不执行此函数
+    printf("(%d,%d)食物已刷新!\n",x_b,y_b);
 }
 
 //奖罚判定，判断吃到食物还是撞墙，还是撞到自己
@@ -116,6 +182,7 @@ int snake_decision(enum direction d)
             else if(map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x] == 0xff0000)  //吃到
             {
                 printf("nice~\n");
+                food(snake->tail->x,snake->tail->y);
                 return 1;
             }
             break;
@@ -129,6 +196,7 @@ int snake_decision(enum direction d)
             else if(map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x] == 0xff0000)  //吃到
             {
                 printf("nice~\n");
+                food(snake->tail->x,snake->tail->y);
                 return 1;
             }
             break;
@@ -142,6 +210,7 @@ int snake_decision(enum direction d)
             else if(map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE] == 0xff0000)  //吃到
             {
                 printf("nice~\n");
+                food(snake->tail->x,snake->tail->y);
                 return 1;
             }
             break;
@@ -155,6 +224,7 @@ int snake_decision(enum direction d)
             else if(map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE] == 0xff0000)  //吃到
             {
                 printf("nice~\n");
+                food(snake->tail->x,snake->tail->y);
                 return 1;
             }
             break;
@@ -180,7 +250,7 @@ void *snake_task(void *arg)
                 (scan_keyboard == 's' && snake->tail->next_direction == s_down)||
                 (scan_keyboard == 'd' && snake->tail->next_direction == s_right))
         {
-            usleep(10); //同向加速
+            usleep(100); //同向加速
         }
         else
             usleep(200000);//正常
