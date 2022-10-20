@@ -12,5 +12,6 @@
 #include "map_show.h"
 #include "snake.h"
 #include "keyboard.h"
+#include "icon.h"
 
 #endif //__MAIN_H

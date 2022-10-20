@@ -403,7 +403,7 @@ struct snake_list *create_list()
 }
 
 //打印蛇身参数
-void print_allToList(struct snake_list *listHead)
+void print_allToList_s(struct snake_list *listHead)
 {
 //遍历链表，将链表中的每个结点的数据打印出来
     pthread_cleanup_push(handler,(void*)&snake_list_rwlock);    //压栈

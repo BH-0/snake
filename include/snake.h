@@ -58,7 +58,7 @@ snake_t *new_node(struct snake_list *listHead,
 struct snake_list *create_list();
 
 //打印蛇身参数
-void print_allToList(struct snake_list *listHead);
+void print_allToList_s(struct snake_list *listHead);
 
 //尾插(链表不得为空)
 void enter_snake_t(struct snake_list *listHead);
