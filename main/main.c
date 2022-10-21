@@ -35,7 +35,6 @@ int main(int argc, char **argv)
     /*读出积分表*/
     game_points_rd();
 
-
     /*创建线程*/
     pthread_t scan_keyboard_t;    //键盘监听线程
     pthread_create(&scan_keyboard_t,NULL,scan_keyboard_task,NULL);
@@ -96,12 +95,12 @@ int main(int argc, char **argv)
                     else if (key_bit == 2)
                     {
                         key_buf = 0;
-
+                        about();    //简介
                     }
                     else if (key_bit == 3)
                     {
                         key_buf = 0;
-
+                        set_menu();    //设置
                     }
                     else if (key_bit == 4)
                     {

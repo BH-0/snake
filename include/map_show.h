@@ -10,6 +10,7 @@
 #define SNAKE_SIZE 20   //蛇身大小,一定要为480和800的公因数
 #define MAP_HEIGHT (480*2)      //地图高
 #define MAP_WIDTH  (800*2)   //地图宽
+#define MAP_COLOR 0x00000000 //地图颜色
 
 struct xy{
     volatile int x;

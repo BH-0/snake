@@ -8,7 +8,8 @@ struct snake_list *snake;
 pthread_rwlock_t snake_list_rwlock; //读写锁
 int game_points = 0; //游戏积分
 int game_points_list[10] = {0}; //积分表
-int SNAKE_COLOR = 0x00aaff; //蛇身颜色
+int SNAKE_COLOR = 0xffffff; //蛇身颜色
+
 
 //读写锁死锁保护函数
 static void handler(void *arg)
@@ -82,7 +83,9 @@ int game_points_insert(int data)
     int j;
     for(i = 0; i<10; i++)
     {
-        if(data>game_points_list[i])
+        if(data == game_points_list[i])
+            return -1;
+        else if(data>game_points_list[i])
             break;
     }
     if(i>=10)
@@ -118,7 +121,7 @@ void game_points_list_show()
     sprintf(buf,"%d",game_points_list[1]);
     Display_utf8(155, 120, buf, 0xff8800, 3, 1);
     sprintf(buf,"%d",game_points_list[2]);
-    Display_utf8(145, 171, buf, 0x91cc52, 2, 1);
+    Display_utf8(145, 172, buf, 0x91cc52, 2, 1);
 
     for(int i=3; i<10;i++)
     {
@@ -137,6 +140,43 @@ void game_points_list_show()
     }
 }
 
+//显示简介
+void about(void)
+{
+    //显示背景
+    bmp_t *bp = open_bmp("./menu/about.bmp");
+    show_bmp(LCD_addr,bp,0,0);
+    destroy_bmp_t(bp);
+
+    for(;;)
+    {
+        if(scan_keyboard == '\n')
+        {
+            scan_keyboard = 0; //清空按键
+            return;
+        }
+    }
+}
+
+//显示设置
+void set_menu(void)
+{
+    //显示背景
+    bmp_t *bp = open_bmp("./menu/set.bmp");
+    show_bmp(LCD_addr,bp,0,0);
+    destroy_bmp_t(bp);
+
+    for(;;)
+    {
+        if(scan_keyboard == '\n')
+        {
+            scan_keyboard = 0; //清空按键
+            return;
+        }
+    }
+}
+
+
 //显示和消除蛇身（4方向扫描）
 //入口参数：想显示或消除的蛇身，1显示，0消除
 void snake_show(snake_t *node, int cmd)
@@ -152,7 +192,7 @@ void snake_show(snake_t *node, int cmd)
     pthread_rwlock_rdlock(&snake_list_rwlock);  //读锁
     direction_f = node->next_direction; //扫描方向
     if (cmd == 0)
-        color = 0xffffffff;
+        color = MAP_COLOR;
     else
         color = node->color;
     x = node->x;
@@ -258,7 +298,7 @@ void food(unsigned int seed_x,unsigned int seed_y)
     y_b -= y_b%SNAKE_SIZE;
     int sum = 0;
     //重叠重刷
-    while((map_buffer[y_b][x_b]&0xffffff) != 0xffffff)    //不为白色
+    while((map_buffer[y_b][x_b]&0xffffff) != MAP_COLOR)    //不为白色
     {
         //刷新范围从 SNAKE_SIZE 到 MAP_WIDTH - SNAKE_SIZE
         x_b = rand()%(MAP_WIDTH-(SNAKE_SIZE*2)+1)+SNAKE_SIZE;
@@ -297,7 +337,7 @@ int snake_decision(enum direction d)
                 food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
                 game_points++;
                 return 1;
-            }else if((map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x]&0xffffff) != 0xffffff)   //白色
+            }else if((map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x]&0xffffff) != MAP_COLOR)   //白色
             {
                 printf("game over!\n");
                 return -1;
@@ -311,7 +351,7 @@ int snake_decision(enum direction d)
                 game_points++;
                 return 1;
             }
-            else if((map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x]&0xffffff) != 0xffffff)   //白色
+            else if((map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x]&0xffffff) != MAP_COLOR)   //白色
             {
                 printf("game over!\n");
                 return -1;
@@ -325,7 +365,7 @@ int snake_decision(enum direction d)
                 game_points++;
                 return 1;
             }
-            else if((map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE]&0xffffff) != 0xffffff)  //白色
+            else if((map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE]&0xffffff) != MAP_COLOR)  //白色
             {
                 printf("game over!\n");
                 return -1;
@@ -338,7 +378,7 @@ int snake_decision(enum direction d)
                 food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
                 game_points++;
                 return 1;
-            }else if((map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE]&0xffffff) != 0xffffff) //白色
+            }else if((map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE]&0xffffff) != MAP_COLOR) //白色
             {
                 printf("game over!\n");
                 return -1;

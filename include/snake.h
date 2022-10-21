@@ -50,6 +50,10 @@ void game_points_wr(void);
 int game_points_insert(int data);
 //显示积分列表
 void game_points_list_show();
+//显示简介
+void about(void);
+//显示设置
+void set_menu(void);
 //食物初始化
 void food_init(void);
 //显示和消除蛇身（4方向扫描）

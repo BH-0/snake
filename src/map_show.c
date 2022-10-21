@@ -41,25 +41,25 @@ void *map_showing_task(void *arg)
             sprintf(buf,"%d",game_points);
             if(game_points>=50)
             {
-                Display_utf8(15,20,buf,0xff0000,2,1);   //红色
+                Display_utf8(15,20,buf,0xff0000,2,0);   //红色
             }else if(game_points>=25)
             {
-                Display_utf8(15,20,buf,0xffcc00,2,1);   //橙黄色
+                Display_utf8(15,20,buf,0xffcc00,2,0);   //橙黄色
             }else
             {
-                Display_utf8(15,20,buf,0x009432,2,1);   //绿色
+                Display_utf8(15,20,buf,0x009432,2,0);   //绿色
             }
             if(scan_keyboard == 'w' || scan_keyboard == 'a' || scan_keyboard == 's' || scan_keyboard == 'd')
                 key_buf = scan_keyboard;
             //键盘方向显示
             if(key_buf == 'w')
-                Display_utf8(15,420,"↑",0x0000ff,2,1);
+                Display_utf8(15,420,"↑",0x00ffff,2,0);
             if(key_buf == 'a')
-                Display_utf8(15,420,"←",0x0000ff,2,1);
+                Display_utf8(15,420,"←",0x00ffff,2,0);
             if(key_buf == 's')
-                Display_utf8(15,420,"↓",0x0000ff,2,1);
+                Display_utf8(15,420,"↓",0x00ffff,2,0);
             if(key_buf == 'd')
-                Display_utf8(15,420,"→",0x0000ff,2,1);
+                Display_utf8(15,420,"→",0x00ffff,2,0);
 
 
             usleep(30000);//刷新率控制30ms刷新一帧
@@ -194,7 +194,7 @@ void map_show_init(void)
     pthread_rwlock_init(&map_buffer_rwlock, NULL);  //读写锁初始化
     pthread_rwlock_wrlock(&map_buffer_rwlock);  //写锁
 
-    memset((int *)map_buffer, 0xff, sizeof(map_buffer));    //清空地图
+    memset((int *)map_buffer, MAP_COLOR, sizeof(map_buffer));    //清空地图
 
     /*边界绘制*/
     for (int j = 0; j <SNAKE_SIZE; j++)
