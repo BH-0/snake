@@ -6,10 +6,7 @@ pthread_rwlock_t map_buffer_rwlock; //读写锁
 int map_buffer[MAP_HEIGHT][MAP_WIDTH] = {0}; //地图buffer 3*3
 
 /*鸟瞰坐标*/
-struct xy{
-    volatile int x;
-    volatile int y;
-}show_xy = {0};
+struct xy show_xy = {0};
 
 //读写锁死锁保护函数
 static void handler(void *arg)
@@ -26,6 +23,8 @@ void *map_showing_task(void *arg)
     static char key_buf = 0;
     char buf[128] = {0};
     pthread_detach(pthread_self()); //分离属性
+    //当线程收到取消请求之后，立即响应,不需要遇到取消点
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
     pthread_cleanup_push(handler,(void*)&map_buffer_rwlock);    //压栈
         int i;
         for (;;)
@@ -101,6 +100,8 @@ void map_show_xy(int x, int y)
 void *map_show_film_task(void *arg)
 {
     pthread_detach(pthread_self()); //分离属性
+    //当线程收到取消请求之后，立即响应,不需要遇到取消点
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
     int pdw = 100;  //跟拍边界与刷新宽度（必须为蛇身倍数）
     enum direction ls;  //镜头移动方向
     //enum direction ds;  //蛇头移动方向

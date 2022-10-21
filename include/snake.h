@@ -10,6 +10,7 @@
 #include "map_show.h"
 #include "keyboard.h"
 #include "font.h"
+#include "bmp.h"
 
 
 
@@ -37,8 +38,18 @@ struct snake_list{
 extern struct snake_list *snake;
 extern pthread_rwlock_t snake_list_rwlock; //读写锁
 extern int game_points;
+extern int game_points_list[10]; //积分表
 
 /*函数声明*/
+//读写积分表
+void game_points_rd(void);
+//写积分表
+void game_points_wr(void);
+//有序插入积分表
+//比列表大的数才会被插入
+int game_points_insert(int data);
+//显示积分列表
+void game_points_list_show();
 //食物初始化
 void food_init(void);
 //显示和消除蛇身（4方向扫描）

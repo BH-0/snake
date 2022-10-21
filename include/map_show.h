@@ -11,6 +11,10 @@
 #define MAP_HEIGHT (480*2)      //地图高
 #define MAP_WIDTH  (800*2)   //地图宽
 
+struct xy{
+    volatile int x;
+    volatile int y;
+};
 
 /*全局声明*/
 extern int map_buffer[MAP_HEIGHT][MAP_WIDTH];    //地图buffer

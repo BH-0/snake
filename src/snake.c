@@ -7,6 +7,7 @@
 struct snake_list *snake;
 pthread_rwlock_t snake_list_rwlock; //读写锁
 int game_points = 0; //游戏积分
+int game_points_list[10] = {0}; //积分表
 int SNAKE_COLOR = 0x00aaff; //蛇身颜色
 
 //读写锁死锁保护函数
@@ -15,6 +16,125 @@ static void handler(void *arg)
     printf("[%u] is cancelled.\n",(unsigned)pthread_self());
     pthread_rwlock_t *pm = (pthread_rwlock_t*)arg;
     pthread_rwlock_unlock(pm);
+}
+
+//读写积分表
+void game_points_rd(void)
+{
+    FILE *fp = fopen("./menu/game_points.txt","r+");//切记这里用"r+"不要用"w+"
+    if(fp == NULL)
+    {
+        perror("fopen fail");
+        return ;
+    }
+    char buf[10240] = {0};
+    fread(buf,1,1024,fp);
+
+    //按行读取
+    char*p;
+    p=strtok(buf,"\n");
+//    if(p != NULL && *p != '\0' && *p != '#')
+//        printf("%s\n",p);
+    int i = 0;
+    while (p)
+    {
+        if(p != NULL && *p != '\0' && *p != '#'&& *p != '\n'&&(strlen(p) > 2))
+        {
+            char name[8] = {0};
+            char points[32] = {0};
+            sscanf(p, "%[^':']:%s",name,points);
+            game_points_list[i] = atoi(points);
+            i++;
+            if(i>9)
+                break;
+        }
+        p=strtok(NULL,"\n");
+    }
+    fclose(fp);
+}
+
+//写积分表
+void game_points_wr(void)
+{
+    FILE *fp = fopen("./menu/game_points.txt","w+");
+    if(fp == NULL)
+    {
+        perror("fopen fail");
+        return ;
+    }
+    char buf[1024] = {0};
+    int i = 0;
+    strcpy(buf,"#积分排行，名次，分数\n");
+    for(i = 0; i<10; i++)
+    {
+        sprintf(buf,"%s%d:%d\n",buf,i+1,game_points_list[i]);
+    }
+    printf("%s\n",buf);
+    fwrite(buf,1,strlen(buf),fp);
+    fclose(fp);
+}
+
+//有序插入积分表
+//比列表大的数才会被插入
+int game_points_insert(int data)
+{
+    int i = 0;
+    int j;
+    for(i = 0; i<10; i++)
+    {
+        if(data>game_points_list[i])
+            break;
+    }
+    if(i>=10)
+        return -1;
+    else
+    {
+        j = i;
+        for(i=9;i>j;i--)
+        {
+            game_points_list[i] = game_points_list[i-1];
+        }
+        game_points_list[j] = data;
+    }
+    return 0;
+}
+
+//显示积分列表
+void game_points_list_show()
+{
+    //显示背景
+    bmp_t *bp = open_bmp("./menu/game_points_list.bmp");
+    show_bmp(LCD_addr,bp,0,0);
+    destroy_bmp_t(bp);
+    char buf[32] = {0};
+
+    //显示当前积分
+    sprintf(buf,"%d",game_points);
+    Display_utf8(600, 390, buf, 0xff8faf, 4, 1);
+
+    //显示积分榜
+    sprintf(buf,"%d",game_points_list[0]);
+    Display_utf8(170, 57, buf, 0xff0000, 4, 1);
+    sprintf(buf,"%d",game_points_list[1]);
+    Display_utf8(155, 120, buf, 0xff8800, 3, 1);
+    sprintf(buf,"%d",game_points_list[2]);
+    Display_utf8(145, 171, buf, 0x91cc52, 2, 1);
+
+    for(int i=3; i<10;i++)
+    {
+        sprintf(buf,"%d",game_points_list[i]);
+        Display_utf8(128, 208+((i-3)*31), buf, 0xffffff, 2, 0);
+    }
+
+
+    for(;;)
+    {
+        if(scan_keyboard == '\n')
+        {
+            scan_keyboard = 0; //清空按键
+            return;
+        }
+    }
 }
 
 //显示和消除蛇身（4方向扫描）
@@ -180,7 +300,7 @@ int snake_decision(enum direction d)
             }else if((map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x]&0xffffff) != 0xffffff)   //白色
             {
                 printf("game over!\n");
-                for(;;);
+                return -1;
             }
             break;
         case s_down:
@@ -194,7 +314,7 @@ int snake_decision(enum direction d)
             else if((map_buffer[snake->tail->y+SNAKE_SIZE][snake->tail->x]&0xffffff) != 0xffffff)   //白色
             {
                 printf("game over!\n");
-                for(;;);
+                return -1;
             }
             break;
         case s_left:
@@ -208,7 +328,7 @@ int snake_decision(enum direction d)
             else if((map_buffer[snake->tail->y][snake->tail->x-SNAKE_SIZE]&0xffffff) != 0xffffff)  //白色
             {
                 printf("game over!\n");
-                for(;;);
+                return -1;
             }
             break;
         case s_right:
@@ -221,7 +341,7 @@ int snake_decision(enum direction d)
             }else if((map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE]&0xffffff) != 0xffffff) //白色
             {
                 printf("game over!\n");
-                for(;;);
+                return -1;
             }
             break;
     }
@@ -231,7 +351,7 @@ int snake_decision(enum direction d)
 //snake主控线程
 void *snake_task(void *arg)
 {
-    pthread_detach(pthread_self()); //分离属性
+    //pthread_detach(pthread_self()); //分离属性
     int length_buf = 0;
     snake_t *p = snake->head;
     for(int i=0; i<snake->nodeNumber; i++)
@@ -278,8 +398,8 @@ void *snake_task(void *arg)
             printf("\n继续游戏\n");
         }
         scan_keyboard = 0; //清空按键
-
-        if(snake_decision(snake->tail->next_direction) == 1)    //碰撞判断
+        int decision = snake_decision(snake->tail->next_direction); //碰撞检测
+        if(decision == 1)    //碰撞判断
         {
 //            for(int i = 0; i <50; i++)
 //            {
@@ -301,6 +421,10 @@ void *snake_task(void *arg)
             snake_show(snake->tail, 1);  //显示头
             snake_show(snake->head, 0);  //消除尾
             del_snake_t(snake); //头删
+        }
+        if(decision == -1)    //结束游戏
+        {
+            pthread_exit(0);
         }
     }
 }
