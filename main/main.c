@@ -39,8 +39,11 @@ int main(int argc, char **argv)
     pthread_t scan_keyboard_t;    //键盘监听线程
     pthread_create(&scan_keyboard_t,NULL,scan_keyboard_task,NULL);
 
-#if 1
+    /*初始化蜂鸣器*/
+    beep_init();
+#if 0
 
+    for(;;);
 #endif
 
     int (*buffer)[480][800] = menu_init();
@@ -59,6 +62,7 @@ int main(int argc, char **argv)
                     scan_keyboard == '\n') {
                     key_buf = scan_keyboard;
                     scan_keyboard = 0;
+                    beep_cmd = 3;   //按钮声
                 }
                 if (key_buf == 's' || key_buf == 'd') {
                     key_bit++;
@@ -90,22 +94,30 @@ int main(int argc, char **argv)
                     }
                 } else   //回车进入对应功能
                 {
-                    if (key_bit == 1)
+                    if (key_bit == 1) {
+                        beep_cmd = 3;   //按钮声
                         break;  //开始游戏
+                    }
                     else if (key_bit == 2)
                     {
+                        beep_cmd = 3;   //按钮声
                         key_buf = 0;
                         about();    //简介
+                        beep_cmd = 3;   //按钮声
                     }
                     else if (key_bit == 3)
                     {
+                        beep_cmd = 3;   //按钮声
                         key_buf = 0;
                         set_menu();    //设置
+                        beep_cmd = 3;   //按钮声
                     }
                     else if (key_bit == 4)
                     {
+                        beep_cmd = 3;   //按钮声
                         key_buf = 0;
                         game_points_list_show();    //显示积分表
+                        beep_cmd = 3;   //按钮声
                     }
                 }
                 usleep(80000);

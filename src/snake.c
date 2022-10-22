@@ -10,7 +10,18 @@ int game_points = 0; //游戏积分
 int game_points_list[10] = {0}; //积分表
 int SNAKE_COLOR = 0xffffff; //蛇身颜色
 
-
+//颜色存储
+typedef struct color_name{
+    char name[32];
+    int color;
+}color_name;
+color_name color_buffer[6] = {{"白色", 0xffffff},
+                              {"橙红", 0xff5900},
+                              {"浅蓝", 0x00ccff},
+                              {"黄色", 0xffea00},
+                              {"紫色", 0xdc73ff},
+                              {"骚粉", 0xff0077}};
+int p_color_bit = 0;
 //读写锁死锁保护函数
 static void handler(void *arg)
 {
@@ -164,16 +175,96 @@ void set_menu(void)
     //显示背景
     bmp_t *bp = open_bmp("./menu/set.bmp");
     show_bmp(LCD_addr,bp,0,0);
-    destroy_bmp_t(bp);
+    /*设置参数显示*/
+    Display_utf8(248, 240, color_buffer[p_color_bit].name, 0, 2, 0);
+    Display_utf8(587, 240, "2", 0, 2, 0);
 
+    struct list_icon *set_t = create_list_icon();  //初始化按钮图标管理结构体
+    icon_init(set_t, "./menu/set.txt"); //导入图标组
+    char key_buf = 0;   //键盘按键
+    int key_bit = 1;    //菜单选项buf
+    display_icons(LCD_addr, set_t, key_bit);    //显示按键
     for(;;)
     {
-        if(scan_keyboard == '\n')
+        /*判断按键*/
+        if (scan_keyboard == 'w' || scan_keyboard == 'a' || scan_keyboard == 's' || scan_keyboard == 'd' ||
+            scan_keyboard == '\n') {
+            key_buf = scan_keyboard;
+            scan_keyboard = 0;
+            beep_cmd = 3;   //按钮声
+        }
+        if (key_buf == 's' || key_buf == 'd') {
+            key_bit++;
+            key_bit = (key_bit > 5 ? 1 : key_bit);
+
+            //刷新背景
+            show_bmp(LCD_addr,bp,0,0);
+            /*设置参数显示*/
+            Display_utf8(248, 240, color_buffer[p_color_bit].name, 0, 2, 0);
+            Display_utf8(587, 240, "2", 0, 2, 0);
+            /*显示按键*/
+            display_icons(LCD_addr, set_t, key_bit);
+
+        } else if (key_buf == 'w' || key_buf == 'a') {
+            key_bit--;
+            key_bit = (key_bit < 1 ? 5 : key_bit);
+
+            //刷新背景
+            show_bmp(LCD_addr,bp,0,0);
+            /*设置参数显示*/
+            Display_utf8(248, 240, color_buffer[p_color_bit].name, 0, 2, 0);
+            Display_utf8(587, 240, "2", 0, 2, 0);
+
+            /*显示按键*/
+            display_icons(LCD_addr, set_t, key_bit);
+        }
+
+        //回车判断
+        if (key_buf != '\n' && key_buf != 0) {
+            key_buf = 0;
+
+
+        } else if(key_buf == '\n')   //回车进入对应功能
         {
-            scan_keyboard = 0; //清空按键
-            return;
+            if (key_bit == 1) {
+                key_buf = 0;
+                p_color_bit--;
+                p_color_bit = (p_color_bit < 0 ? 5 : p_color_bit);
+                SNAKE_COLOR = color_buffer[p_color_bit].color;  //设置蛇身颜色
+            }
+            else if (key_bit == 2)
+            {
+                key_buf = 0;
+                p_color_bit++;
+                p_color_bit = (p_color_bit > 5 ? 0 : p_color_bit);
+                SNAKE_COLOR = color_buffer[p_color_bit].color;  //设置蛇身颜色
+            }
+            else if (key_bit == 3)
+            {
+                key_buf = 0;
+
+            }
+            else if (key_bit == 4)
+            {
+                key_buf = 0;
+
+            }
+            else if (key_bit == 5)
+            {
+                key_buf = 0;
+                break;
+            }
+            //刷新背景
+            show_bmp(LCD_addr,bp,0,0);
+            /*设置参数显示*/
+            Display_utf8(248, 240, color_buffer[p_color_bit].name, 0, 2, 0);
+            Display_utf8(587, 240, "2", 0, 2, 0);
+
+            /*显示按键*/
+            display_icons(LCD_addr, set_t, key_bit);
         }
     }
+    destroy_bmp_t(bp);
 }
 
 
@@ -335,6 +426,7 @@ int snake_decision(enum direction d)
             {
                 printf("nice~\n");
                 food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                beep_cmd = 1;   //响一下
                 game_points++;
                 return 1;
             }else if((map_buffer[snake->tail->y-SNAKE_SIZE][snake->tail->x]&0xffffff) != MAP_COLOR)   //白色
@@ -348,6 +440,7 @@ int snake_decision(enum direction d)
             {
                 printf("nice~\n");
                 food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                beep_cmd = 1;   //响一下
                 game_points++;
                 return 1;
             }
@@ -362,6 +455,7 @@ int snake_decision(enum direction d)
             {
                 printf("nice~\n");
                 food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                beep_cmd = 1;   //响一下
                 game_points++;
                 return 1;
             }
@@ -376,6 +470,7 @@ int snake_decision(enum direction d)
             {
                 printf("nice~\n");
                 food(snake->tail->x*snake->head->x,snake->tail->y*snake->head->y);
+                beep_cmd = 1;   //响一下
                 game_points++;
                 return 1;
             }else if((map_buffer[snake->tail->y][snake->tail->x+SNAKE_SIZE]&0xffffff) != MAP_COLOR) //白色
@@ -464,6 +559,7 @@ void *snake_task(void *arg)
         }
         if(decision == -1)    //结束游戏
         {
+            beep_cmd = 2;   //摩托车音效
             pthread_exit(0);
         }
     }

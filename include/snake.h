@@ -11,7 +11,8 @@
 #include "keyboard.h"
 #include "font.h"
 #include "bmp.h"
-
+#include "beep.h"
+#include "icon.h"
 
 
 //方向
@@ -39,6 +40,7 @@ extern struct snake_list *snake;
 extern pthread_rwlock_t snake_list_rwlock; //读写锁
 extern int game_points;
 extern int game_points_list[10]; //积分表
+extern int SNAKE_COLOR; //蛇身颜色
 
 /*函数声明*/
 //读写积分表

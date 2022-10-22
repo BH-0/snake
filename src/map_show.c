@@ -3,7 +3,7 @@
 //此为地图处理程序
 //----------------------------------------------------------------
 pthread_rwlock_t map_buffer_rwlock; //读写锁
-int map_buffer[MAP_HEIGHT][MAP_WIDTH] = {0}; //地图buffer 3*3
+int map_buffer[MAP_HEIGHT][MAP_WIDTH]; //地图buffer 3*3
 
 /*鸟瞰坐标*/
 struct xy show_xy = {0};

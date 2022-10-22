@@ -13,5 +13,6 @@
 #include "snake.h"
 #include "keyboard.h"
 #include "icon.h"
+#include "beep.h"
 
 #endif //__MAIN_H
